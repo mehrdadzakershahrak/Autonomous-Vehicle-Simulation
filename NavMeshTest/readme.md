@@ -2,4 +2,4 @@
 
 
 This is for testing the triangulation of NavMesh.
-![scene](./NavMeshTest/triangulation.png)
+![scene](./triangulation.png)
