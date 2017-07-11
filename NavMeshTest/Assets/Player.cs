@@ -1,8 +1,16 @@
 ﻿using System;
+using System.IO;
+//using System.Runtime.Serialization;
+//using System.Runtime.Serialization.Json;
+//using System.Xml.Serialization;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+//using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AI;
+using Newtonsoft.Json;
 
 public class Player : MonoBehaviour
 {
@@ -35,6 +43,45 @@ public class Player : MonoBehaviour
         //}
         //mesh.RecalculateNormals();
         //mesh.RecalculateBounds();
+        
+
+        Debug.Log("Converting the triangulated data to Json format...");
+        //var serializer = new DataContractJsonSerializer(typeof(TriangulationToJson));
+        //MemoryStream ms = new MemoryStream();
+        //var vlist = new List<Vertex>();
+        //for (int vid = 0 ; vid < t.vertices.Length ; vid++)
+        //{
+        //    vlist.Add(new Vertex(vid, t.vertices[vid].x, t.vertices[vid].y, t.vertices[vid].z));
+        //}
+	var triangulation = new TriangulationToJson();
+	for (int vid = 0 ; vid < t.vertices.Length ; vid++) {
+	    triangulation.vertices.Add(vid, new List<float>(new float[] {t.vertices[vid].x, t.vertices[vid].y, t.vertices[vid].z}));
+	}
+	for (int tid = 0 ; tid < t.indices.Length / 3 ; tid++)
+	{
+	    triangulation.triangles.Add(tid, new List<int>(new int[] {t.indices[tid * 3 + 0], t.indices[tid * 3 + 1], t.indices[tid * 3 + 2]}));
+	}
+
+	string json = JsonConvert.SerializeObject(triangulation);
+
+        //var tlist = new List<Triangle>();
+        //for (int tid = 0 ; tid < t.indices.Length / 3 ; tid++)
+        //{
+        //    tlist.Add(new Triangle(tid, t.indices[tid * 3 + 0], t.indices[tid * 3 + 1], t.indices[tid * 3 + 2]));
+        //}
+        //var triangulationToJson = new TriangulationToJson(vlist, tlist);
+        //serializer.WriteObject(ms, triangulationToJson);
+        //ms.Position = 0;
+        //var clone = serializer.ReadObject(ms) as TriangulationToJson;
+
+        Debug.Log("Writing the Json data to a file...");
+        using (FileStream fs = new FileStream("triangulation.json", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+        using (StreamWriter sw = new StreamWriter(fs, Encoding.UTF8))
+        {
+            //sw.WriteLine(clone);
+	    sw.WriteLine(json);
+        }
+        Debug.Log("Writing Done.");
     }
 
     private void OnDrawGizmos()
@@ -82,4 +129,155 @@ public class Player : MonoBehaviour
     }
 
 }
-    
+
+/*
+[DataContract]
+public class Vertex
+{
+    [DataMember]
+    public float x;
+    [DataMember]
+    public float y;
+    [DataMember]
+    public float z;
+    [DataMember]
+    public int vid;
+
+    public Vertex(int vid, float x, float y, float z)
+    {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.vid = vid;
+    }
+
+    public override string ToString()
+    {
+        return string.Format("'{0}': [{1}, {2}, {3}]", this.vid, this.x, this.y, this.z);
+    }
+}
+
+[DataContract]
+public class Vertices
+{
+    [DataMember]
+    public List<Vertex> vertexList;
+
+    public Vertices(List<Vertex> vertex_list)
+    {
+        this.vertexList = new List<Vertex>();
+        foreach (var vertex in vertex_list)
+        {
+            this.vertexList.Add(vertex);
+        }
+    }
+
+    public override string ToString()
+    {
+        var result = "{" + string.Join(", ", (object[])this.vertexList.ToArray()) + "}";
+        return result;
+        //return "[" + string.Join(", ", this.vertexList.ToArray()) + "]";
+    }
+}
+
+[DataContract]
+public class Triangle
+{
+    [DataMember]
+    public int tid;
+    [DataMember]
+    public int p1;
+    [DataMember]
+    public int p2;
+    [DataMember]
+    public int p3;
+
+    public Triangle(int tid, int p1, int p2, int p3)
+    {
+        this.tid = tid;
+        this.p1 = p1;
+        this.p2 = p2;
+        this.p3 = p3;
+    }
+
+    public override string ToString()
+    {
+        return string.Format("'{0}': [{1}, {2}, {3}]", this.tid, this.p1, this.p2, this.p3);
+    }
+}
+
+[DataContract]
+public class Triangles
+{
+    [DataMember]
+    public List<Triangle> triangleList;
+
+    public Triangles(List<Triangle> triangle_list)
+    {
+        this.triangleList = new List<Triangle>();
+        foreach (var triangle in triangle_list)
+        {
+            this.triangleList.Add(triangle);
+        }
+    }
+
+    public override string ToString()
+    {
+        var result = "{" + string.Join(", ", (object[])this.triangleList.ToArray()) + "}";
+        return result;
+    }
+}
+
+[DataContract]
+public class TriangulationToJson
+{
+    [DataMember]
+    public Vertices vertices;
+    [DataMember]
+    public Triangles triangles;
+
+    public TriangulationToJson(List<Vertex> vlist, List<Triangle> tlist)
+    {
+        this.vertices = new Vertices(vlist);
+        this.triangles = new Triangles(tlist);
+    }
+
+    public override string ToString()
+    {
+        var res1 = "'vertices': " + string.Join(", ", this.vertices);
+        var res2 = "'triangles': " + string.Join(", ", this.triangles);
+        return "{" + res1 + ", " + res2 + "}";
+    }
+}
+*/
+
+public class TriangulationToJson
+{
+    public Dictionary<int, List<float>> vertices;
+    public Dictionary<int, List<int>> triangles;
+    public TriangulationToJson()
+    {
+        this.vertices = new Dictionary<int, List<float>>();
+        this.triangles = new Dictionary<int, List<int>>();
+    }
+    //public override string ToString()
+    //{
+    //    StringBuilder sb = new StringBuilder();
+    //    sb.Append("{'vertices': {");
+    //    foreach (var pair in this.vertices)
+    //    {
+    //        //sb.AppendFormat("'{0}' : [{1}], ", pair.Key, pair.Value);
+    //        sb.AppendFormat("'{0}' : ", pair.Key);
+    //        sb.Append("[" + string.Join(", ", pair.Value.ToArray()) + "], ");
+    //    }
+    //    sb.Append("}, 'triangles': {");
+    //    foreach (var pair in this.triangles)
+    //    {
+    //        //sb.AppendFormat("'{0}' : [{1}], ", pair.Key, pair.Value);
+    //        sb.AppendFormat("'{0}' : ", pair.Key);
+    //        sb.Append("[" + string.Join(", ", pair.Value.ToArray()) + "], ");
+    //    }
+    //    sb.Append("}}");
+    //    return sb.ToString();
+    //}
+}
